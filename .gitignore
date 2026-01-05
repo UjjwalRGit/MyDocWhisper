@@ -1,0 +1,62 @@
+# MyDocWhisper .gitignore
+
+# ====================
+# Backend (Python)
+# ====================
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variables (API keys)
+backend/.env
+.env
+
+# MyDocWhisper runtime folders
+backend/uploads/
+backend/chroma_db/
+uploads/
+chroma_db/
+
+# ====================
+# Frontend (Next.js)
+# ====================
+
+# Dependencies
+frontend/node_modules/
+node_modules/
+
+# Next.js build output
+frontend/.next/
+.next/
+frontend/out/
+out/
+
+# Next.js TypeScript auto-generated files
+frontend/next-env.d.ts
+next-env.d.ts
+
+# ====================
+# General
+# ====================
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Test PDFs
+*.pdf
