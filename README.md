@@ -323,7 +323,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Bhaskar (Ujjwal Raghuvanshi)**
+**Ujjwal Raghuvanshi**
 
 Building MyDocWhisper as a portfolio project to demonstrate:
 - ✅ Full-Stack Development (React/Next.js + FastAPI)
