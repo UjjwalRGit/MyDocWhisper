@@ -60,13 +60,23 @@ class VectorStoreManager:
 
         # Create Document objects
         documents = [
-            Document(page_content = text, metadata = metadata)
+            Document(page_content=str(text), metadata=metadata)
             for text, metadata in zip(texts, metadatas)
         ]
 
         # Add to vector store
+        print(f"Adding {len(documents)} documents to vector store")
         ids = self.vectorstore.add_documents(documents)
-        return ids
+        print(f"Received ids: {type(ids)}, value: {ids}")
+    
+        # Handle different return types
+        if ids is None:
+            return []
+        elif isinstance(ids, int):
+            # If it returns count instead of list of IDs
+            return [str(i) for i in range(ids)]
+        else:
+            return ids if ids else []
     
     # Search for similar documents
         # Args:

@@ -40,7 +40,7 @@ class RAGPipeline:
         metadatas = []
         filename = Path(pdfPath).name
 
-        for pageNum, page in enumerate(reader.pages, start = 1):
+        for pageNum, page in enumerate(reader.pages, start=1):
             text = page.extract_text()
             if text.strip(): # only add pages that aren't empty
                 texts.append(text)
