@@ -8,13 +8,17 @@ import shutil
 from dotenv import load_dotenv
 from vector_store import VectorStoreManager
 from rag_pipeline import RAGPipeline
+from fastapi.responses import StreamingResponse
 
 load_dotenv()
 
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not loaded")
 
-app = FastAPI(title = "MyDocWhisper API", version = "1.0")
+app = FastAPI(
+    title = "MyDocWhisper API", 
+    version = "2.0",
+    description = "RAG document chat now with streaming")
 
 #CORS middleware for frontend
 app.add_middleware(
@@ -34,6 +38,7 @@ vectorStore = VectorStoreManager(store_type = "chroma", persist_directory= "./ch
 ragPipeline = RAGPipeline(vector_store = vectorStore)
 documentsStore = {}
 
+# Pydantic models
 class ChatMessage(BaseModel):
     role: str
     content: str
@@ -57,9 +62,13 @@ class UploadResponse(BaseModel):
 async def root():
     stats = ragPipeline.getStats()
     return {
-        "message": "MyDocWhisper API is running",
-        "version": "1.0",
-        "ragEnabled": True,
+        "message": "MyDocWhisper API v2.0 is running",
+        "version": "2.0",
+        "features": {
+            "streaming": True,
+            "chatHistory": True,
+            "citations": True
+        },
         "stats": stats
     }
 
@@ -98,7 +107,7 @@ async def uploadDocument(file: UploadFile = File(...)):
             "stats": result
         }
 
-        print(f"✅ Document processed: {result['totalChunks']} chunks created)")
+        print(f"✅ Document processed: {result['totalChunks']} chunks created")
 
         return UploadResponse(
             message = "File uploaded and processed successfully",
@@ -117,7 +126,42 @@ async def uploadDocument(file: UploadFile = File(...)):
             detail = f"Document processing failed: {str(e)}"
         )
 
-# Chat with a document using RAG. Retrieves relevant chunks and generates answer with citations. 
+# Chat with a document with a streaming response
+@app.post("/chat/stream")
+async def chatStream(request: ChatRequest):
+    if request.documentId not in documentsStore:
+        raise HTTPException(
+            status_code = 404,
+            detail = f"Document {request.documentId} not found" 
+        )
+    
+    try:
+        # Convert chat history to RAG pipeline format
+        chatHistory = [
+            {"role": msg.role, "content": msg.content}
+            for msg in request.history
+        ]
+
+        async def generate():
+            async for chunk in ragPipeline.answerStream(
+                question = request.message,
+                documentId = request.documentId,
+                chatHistory = chatHistory
+            ):
+                yield chunk
+
+        return StreamingResponse(
+            generate(), media_type = "text/event-stream"
+        )
+    
+    except Exception as e:
+        print(f"❌ Error in streaming chat: {str(e)}")
+        raise HTTPException(
+            status_code = 500,
+            detail = f"Failed to generate answer: {str(e)}"
+        )
+
+# Chat with a document using RAG. Retrieves relevant chunks and generates answer with citations. (Without streaming)
 @app.post("/chat", response_model = ChatResponse)
 async def chat(request: ChatRequest):
     if request.documentId not in documentsStore:
@@ -127,10 +171,15 @@ async def chat(request: ChatRequest):
         )
     
     try:
+        chatHistory = [
+            {"role": msg.role, "content": msg.content}
+            for msg in request.history
+        ]
+
         result = ragPipeline.answer(
             question = request.message,
             documentId = request.documentId,
-            chatHistory = None # TODO
+            chatHistory = chatHistory
         )
 
         print(f"Answer generated with {len(result['sources'])} sources")
@@ -218,4 +267,5 @@ if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting MyDocWhisper API with RAG enabled...")
     print(f"📊 Vector store: {vectorStore.store_type}")
+    print("✨ Features: Streaming, Chat History, Enhanced Citations")
     uvicorn.run(app, host="0.0.0.0", port=8000)
