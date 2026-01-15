@@ -25,6 +25,8 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
   const inputRef = useRef<HTMLInputElement>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -67,7 +69,7 @@ export default function ChatInterface({ documentId, documentName }: ChatInterfac
     ]);
 
     try {
-      const response = await fetch('http://localhost:8000/chat/stream',
+      const response = await fetch(`${API_URL}/chat/stream`,
         {
           method: 'POST',
           headers: {

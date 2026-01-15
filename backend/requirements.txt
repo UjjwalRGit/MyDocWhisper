@@ -16,8 +16,13 @@ langchain-openai==1.1.6
 langchain-text-splitters==1.1.0
 langchain-chroma==1.1.0
 
-# Vector Database
+# Vector Database (chroma)
 chromadb==1.4.0
+
+# Vector Database (supabase)
+supabase==2.11.3
+postgrest==0.18.0
+storage3==0.8.1
 
 # OpenAI API
 openai==2.14.0

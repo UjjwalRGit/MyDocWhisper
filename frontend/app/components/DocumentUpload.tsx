@@ -11,6 +11,7 @@ interface DocumentUploadProps {
 export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -35,7 +36,7 @@ export default function DocumentUpload({ onUploadSuccess }: DocumentUploadProps)
           });
         }, 200);
 
-        const response = await fetch('http://localhost:8000/upload', {
+        const response = await fetch(`${API_URL}/upload`, {
           method: 'POST',
           body: formData,
         });

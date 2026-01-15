@@ -17,6 +17,7 @@ ENV/
 # Environment variables (API keys)
 backend/.env
 .env
+frontend/.env.production
 
 # MyDocWhisper runtime folders
 backend/uploads/

@@ -6,11 +6,16 @@ import os
 from pathlib import Path
 import shutil
 from dotenv import load_dotenv
-from vector_store import VectorStoreManager
+from vector_store_supabase import VectorStoreManager
 from rag_pipeline import RAGPipeline
 from fastapi.responses import StreamingResponse
+from supabase import create_client
+import tempfile
 
 load_dotenv()
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
+supabase = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 if not os.getenv("OPENAI_API_KEY"):
     raise ValueError("OPENAI_API_KEY not loaded")
@@ -30,8 +35,7 @@ app.add_middleware(
 )
 
 # Storage
-UPLOAD_DIR = Path("./uploads")
-UPLOAD_DIR.mkdir(exist_ok= True)
+USE_SUPABASE_STORAGE = os.getenv("USE_SUPABASE_STORAGE", "false").lower() == "true"
 
 # Initialize RAG pipline
 vectorStore = VectorStoreManager(store_type = "chroma", persist_directory= "./chroma_db")
@@ -72,7 +76,7 @@ async def root():
         "stats": stats
     }
 
-# Upload and process a PDF Document
+# Upload and process a PDF Document (modified)
 @app.post("/upload", response_model = UploadResponse)
 async def uploadDocument(file: UploadFile = File(...)):
     MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
@@ -88,43 +92,60 @@ async def uploadDocument(file: UploadFile = File(...)):
     if not file.filename.endswith('.pdf'):
         raise HTTPException(status_code = 400, detail = "Only PDF files are allowed")
     
-    filePath = UPLOAD_DIR / file.filename
+    docId = file.filename.replace('.pdf', '').replace(' ', '_')
 
     try:
-        with open(filePath, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        if USE_SUPABASE_STORAGE and supabase:
+            file_bytes = await file.read()
+            storage_path = f"{docId}/{file.filename}"
 
-        docId = file.filename.replace('.pdf', '').replace(' ', '_')
+            supabase.storage.from_("pdf-uploads").upload(
+                storage_path, file_bytes, {"content-type": "application/pdf"}
+            )
 
-        # Process the document through the RAG pipeline
-        print(f"Processing document: {file.filename}")
-        result = ragPipeline.processDocument(str(filePath), docId)
+            # Download to temp file for processing
+            with tempfile.NamedTemporaryFile(delete = False, suffix = '.pdf') as tmp:
+                tmp.write(file_bytes)
+                temp_path = tmp.name
 
-        # Store document info
-        documentsStore[docId] = {
-            "filename": file.filename,
-            "path": str(filePath),
-            "stats": result
-        }
+            result = ragPipeline.processDocument(temp_path, docId)
+            os.unlink(temp_path) # clean up tmp
 
-        print(f"✅ Document processed: {result['totalChunks']} chunks created")
+            documentsStore[docId] = {
+                "filename": file.filename,
+                "path": storage_path,
+                "storage": "supabase",
+                "stats": result
+            }
+
+        else:
+            # Development logic with local db
+            UPLOAD_DIR = Path("./uploads")
+            UPLOAD_DIR.mkdir(exist_ok=True)
+            filePath = UPLOAD_DIR / file.filename
+            
+            with open(filePath, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            result = ragPipeline.processDocument(str(filePath), docId)
+            
+            documentsStore[docId] = {
+                "filename": file.filename,
+                "path": str(filePath),
+                "storage": "local",
+                "stats": result
+            }
 
         return UploadResponse(
-            message = "File uploaded and processed successfully",
-            documentId = docId,
-            filename = file.filename,
-            stats = result
+            message="File uploaded and processed successfully",
+            documentId=docId,
+            filename=file.filename,
+            stats=result
         )
     
     except Exception as e:
-        if filePath.exists():
-            filePath.unlink()
-
-        print(f"❌ Error processing document: {str(e)}")
-        raise HTTPException(
-            status_code = 500,
-            detail = f"Document processing failed: {str(e)}"
-        )
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code = 500, detail = f"Processing failed: {str(e)}")
 
 # Chat with a document with a streaming response
 @app.post("/chat/stream")
