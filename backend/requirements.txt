@@ -1,31 +1,31 @@
-# Web Framework
-fastapi==0.128.0
-uvicorn==0.40.0
-python-multipart==0.0.21
+# MyDocWhisper Backend Requirements
+# Minimal, tested versions that work together
 
-# Environment & Configuration
-python-dotenv==1.2.1
-pydantic==2.12.5
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Environment & Configuration  
+python-dotenv==1.0.1
+pydantic==2.10.3
 
 # PDF Processing
-pypdf==6.5.0
+pypdf==5.1.0
 
-# LangChain Ecosystem
-langchain-core==1.2.6
-langchain-openai==1.1.6
-langchain-text-splitters==1.1.0
-langchain-chroma==1.1.0
-langchain-community==1.2.6
+# LangChain - Using latest stable 0.3.x series
+langchain==0.3.13
+langchain-core==0.3.28
+langchain-openai==0.2.14
+langchain-text-splitters==0.3.4
+langchain-chroma==0.1.4
+langchain-community==0.3.13
 
-# Vector Database (ChromaDB - for local development)
-chromadb==1.4.0
+# Vector Database - ChromaDB
+chromadb==0.5.23
 
-# Vector Database (Supabase - for production)
-# Let supabase package manage its own dependencies
+# Vector Database - Supabase (installs its own dependencies)
 supabase==2.10.0
 
-# OpenAI API
-openai==2.14.0
-
-# Observability (Optional)
-langsmith==0.6.0
+# OpenAI
+openai==1.59.3
