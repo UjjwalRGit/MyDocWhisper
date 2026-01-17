@@ -20,8 +20,8 @@ langchain-chroma==1.1.0
 chromadb==1.4.0
 
 # Vector Database (supabase)
-supabase==2.11.3
-postgrest==0.18.0
+supabase==2.10.0
+postgrest==0.17.2
 storage3==0.8.1
 
 # OpenAI API
