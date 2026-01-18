@@ -10,15 +10,32 @@ class VectorStoreManager:
     # Initialize the vector store manager.
         # store_type: Type of vector store (supabase)
     def __init__(self, store_type: str = "supabase", persist_directory: str = None):
-        """Accepts persist_directory for backward compatibility with old main.py"""
         self.store_type = "supabase"
         self.embeddings = OpenAIEmbeddings(model = "text-embedding-3-small")
         
-        # Supabase setup
+        # Supabase setup - with debug logging
+        print("=" * 50)
+        print("DEBUG: Checking environment variables...")
+        print(f"All env vars: {list(os.environ.keys())[:10]}")  # First 10 keys
+        
         supabase_url = os.getenv("SUPABASE_URL")
         supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
         
+        print(f"SUPABASE_URL found: {bool(supabase_url)}")
+        print(f"SUPABASE_SERVICE_KEY found: {bool(supabase_key)}")
+        
+        if supabase_url:
+            print(f"SUPABASE_URL value: {supabase_url[:30]}...")
+        if supabase_key:
+            print(f"SUPABASE_SERVICE_KEY value: {supabase_key[:30]}...")
+        print("=" * 50)
+        
         if not supabase_url or not supabase_key:
+            print("❌ ERROR: Environment variables not found!")
+            print("Available environment variables:")
+            for key in os.environ.keys():
+                if 'SUPABASE' in key or 'OPENAI' in key:
+                    print(f"  - {key}")
             raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
         
         self.supabase_client: Client = create_client(supabase_url, supabase_key)
