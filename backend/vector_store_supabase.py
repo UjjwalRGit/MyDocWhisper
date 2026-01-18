@@ -1,4 +1,4 @@
-# Supabase vector store fro deployment
+# Supabase vector store for deployment
 import os
 from typing import List, Dict, Any, Optional
 from langchain_openai import OpenAIEmbeddings
@@ -9,8 +9,9 @@ from langchain_core.documents import Document
 class VectorStoreManager:
     # Initialize the vector store manager.
         # store_type: Type of vector store (supabase)
-    def __init__(self, store_type: str = "supabase"):
-        self.store_type = store_type
+    def __init__(self, store_type: str = "supabase", persist_directory: str = None):
+        """Accepts persist_directory for backward compatibility with old main.py"""
+        self.store_type = "supabase"
         self.embeddings = OpenAIEmbeddings(model = "text-embedding-3-small")
         
         # Supabase setup
