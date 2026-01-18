@@ -28,7 +28,11 @@ app = FastAPI(
 #CORS middleware for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:3000"],
+    allow_origins = [
+    "http://localhost:3000",
+    "https://mydocwhisper.vercel.app",  # Add your actual Vercel URL
+    "https://*.vercel.app"  # Allow preview deployments
+    ],
     allow_credentials = True,
     allow_methods = ["*"],
     allow_headers = ["*"]
@@ -38,7 +42,7 @@ app.add_middleware(
 USE_SUPABASE_STORAGE = os.getenv("USE_SUPABASE_STORAGE", "false").lower() == "true"
 
 # Initialize RAG pipline
-vectorStore = VectorStoreManager(store_type = "chroma", persist_directory= "./chroma_db")
+vectorStore = VectorStoreManager(store_type = "auto")
 ragPipeline = RAGPipeline(vector_store = vectorStore)
 documentsStore = {}
 
@@ -249,8 +253,11 @@ async def reset():
     try:
         vectorStore.clear()
 
-        shutil.rmtree(UPLOAD_DIR)
-        UPLOAD_DIR.mkdir(exist_ok = True)
+        if not USE_SUPABASE_STORAGE:
+            UPLOAD_DIR = Path("./uploads")
+            if UPLOAD_DIR.exists():
+                shutil.rmtree(UPLOAD_DIR)
+                UPLOAD_DIR.mkdir(exist_ok = True)
         
         documentsStore.clear()
         return {"message": "Database reset"}
